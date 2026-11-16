@@ -1,73 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
     {% load static %}
-    <title>Course Details</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <meta charset="UTF-8">
+    <title>Online Courses</title>
 </head>
-
 <body>
-<!-- Navigation bar -->
-<nav class="navbar navbar-light bg-light">
-    <div class="container-fluid">
-        <div class="navbar-header">
-            <a class="navbar-brand" href="{% url 'onlinecourse:index' %}">Home</a>
+    <!-- Navigation bar -->
+    <nav class="navbar navbar-light bg-light">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="#">Online Course</a>
+            </div>
+            <ul class="nav navbar-nav navbar-right">
+                {% if user.is_authenticated %}
+                <li>
+                    <a class="btn btn-link" href="#">{{ user.first_name }}({{ user.username }})</a>
+                    <a class="btn btn-link" href="{% url 'onlinecourse:logout' %}">Logout</a>
+                </li>
+                {% else %}
+                <li>
+                    <form class="form-inline" action="{% url 'onlinecourse:login' %}" method="post">
+                        {% csrf_token %}
+                        <div class="input-group">
+                            <input type="text" class="form-control" placeholder="Username" name="username">
+                            <input type="password" class="form-control" placeholder="Password" name="psw">
+                            <button class="btn btn-primary" type="submit">Login</button>
+                            <a class="btn btn-link" href="{% url 'onlinecourse:registration' %}">Sign Up</a>
+                        </div>
+                    </form>
+                </li>
+                {% endif %}
+            </ul>
         </div>
-        <ul class="nav navbar-nav navbar-right">
-            {% if user.is_authenticated %}
-            <li>
-                <a class="btn btn-link" href="#">{{ user.first_name }}({{ user.username }})</a>
-                <a class="btn btn-link" href="{% url 'onlinecourse:logout' %}">Logout</a>
-            </li>
-            {% else %}
-            <li>
-                <form class="form-inline" action="{% url 'onlinecourse:login' %}" method="post">
-                    {% csrf_token %}
-                    <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Username" name="username">
-                        <input type="password" class="form-control" placeholder="Password" name="psw">
-                        <button class="btn btn-primary" type="submit">Login</button>
-                        <a class="btn btn-link" href="{% url 'onlinecourse:registration' %}">Sign Up</a>
+    </nav>
+
+    <!-- Page content -->
+    {% if course_list %}
+        <div class="container">
+            <div class="card-deck">
+                {% for course in course_list %}
+                    <div class="card" style="width: 36rem;">
+                        <img class="card-img-left" src="{{MEDIA_URL}}/{{ course.image }}" width="240px" height="240px"
+                             alt="Course image">
+                        <div class="card-body bg-light">
+                            <h5 class="card-title">{{ course.name }}, <span class="text-success">
+                                {{ course.total_enrollment }} enrolled</span></h5>
+                            <p class="card-text">{{ course.description }}</p>
+                            <form action="{% url 'onlinecourse:enroll' course.id %}" method="post">
+                                {% csrf_token %}
+                                <input class="btn btn-primary" type="submit"
+                                       value="{% if course.is_enrolled %}Enter{% else %}Enroll{% endif %}">
+                            </form>
+                        </div>
                     </div>
-                </form>
-            </li>
-            {% endif %}
-        </ul>
-    </div>
-</nav>
-
-<!-- Page content -->
-<div class="container-fluid">
-    <h2>{{ course.name }}</h2>
-    <div class="card-columns-vertical">
-        {% for lesson in course.lesson_set.all %}
-        <div class="card mt-1">
-            <div class="card-header"><h5>Lesson {{ forloop.counter }}: {{ lesson.title }}</h5></div>
-            <div class="card-body">{{ lesson.content }}</div>
+                {% endfor %}
+            </div>
         </div>
-        {% endfor %}
-    </div>
-
-    <!-- Exam section -->
-    {% if user.is_authenticated %}
-    </br>
-    <button class="btn btn-primary btn-block" data-toggle="collapse" data-target="#exam">Start Exam</button>
-    <div id="exam" class="collapse">
-        <form id="questionform" action="{% url 'onlinecourse:submit' course.id %}" method="POST">
-            {% for question in course.question_set.all %}
-            <div class="card mt-1">
-                <div class="card-header">
-                    <h5>{{ question.content }}</h5>
-                </div>
-                {% csrf_token %}
-                <div class="form-group">
-                    {% for choice in question.choice_set.all %}
-                    <div class="form-check">
-                        <label class="form-check-label">
-                            <input type="checkbox" name="choice_{{choice.id}}" class="form-check-input"
-                                   id="{{choice.id}}" value="{{choice.id}}">{{ choice.content }}
-                        </label>
+    {% else %}
+        <p>No courses are available.</p>
+    {% endif %}
+</body>
+</html>
